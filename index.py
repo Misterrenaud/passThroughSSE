@@ -1,11 +1,13 @@
 #!/bin/python
 #encoding:utf-8
 from flask import Flask, request, Response, jsonify
+from flask_cors import CORS, cross_origin
 from werkzeug.contrib.fixers import ProxyFix
 import uuid
 from kernel import TheHouse, get_ts
 
 app = Flask(__name__)
+cors = CORS(app)
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 def get_uuid():
@@ -23,19 +25,23 @@ def messages_stream(room_id):
             yield "data:{}\n\n".format(message)
 
 @app.route("/listen/<room_id>")
+@cross_origin()
 def listner(room_id):
     return Response(messages_stream(room_id), mimetype="text/event-stream")
 
 @app.route("/write/<room_id>", methods=["POST"])
+@cross_origin()
 def write(room_id):
     TheHouse.write_in_room(room_id, request.data.decode("utf8"))
     return jsonify({"success":True})
 
 @app.route("/ping")
+@cross_origin()
 def ping():
     return Response("pong")
 
 @app.route("/thehouse")
+@cross_origin()
 def show_thehouse():
     return jsonify({
         "TheHouse": TheHouse.to_json()
